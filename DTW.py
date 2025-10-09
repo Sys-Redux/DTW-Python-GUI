@@ -8,6 +8,41 @@ class Character:
         self.attack_power = attack_power
         self.max_health = health
         self.healing_potions = 3 # Each character starts with 3 healing potions
+        self.level = 1
+        self.experience = 0
+        self.exp_to_next_level = 100
+        self.victories = 0
+
+    def gain_experience(self, amount):
+        """Gain experience and level up if threshold reached"""
+        self.experience += amount
+        print(f"✨{self.name} gained {amount} experience!")
+
+        leveled_up = False
+        while self.experience >= self.exp_to_next_level:
+            self.level_up()
+            leveled_up = True
+        return leveled_up
+
+    def level_up(self):
+        """Level up and increase stats"""
+        self.level += 1
+        self.experience -= self.exp_to_next_level
+        self.exp_to_next_level = int(self.exp_to_next_level * 1.5)
+
+        # Increase stats by 10%
+        health_gain = int(self.max_health * 0.1)
+        attack_gain = max(1, int(self.attack_power * 0.1))
+
+        self.max_health += health_gain
+        self.health = self.max_health  # Full heal on level up
+        self.attack_power += attack_gain
+
+        print(f"\n🎉✨ LEVEL UP! {self.name} reached level {self.level}! ✨🎉")
+        print(f"Max Health: +{health_gain} (Now {self.max_health})")
+        print(f"Attack Power: +{attack_gain} (Now {self.attack_power})")
+        print(f"Health fully restored!")
+        return True
 
     def attack(self, opponent):
         # Calculate random damage within range
@@ -39,7 +74,7 @@ class Character:
         return True
 
     def display_stats(self):
-        print(f"{self.name}'s Stats - Health: {self.health}/{self.max_health}, Attack Power: {self.attack_power}")
+        print(f"{self.name}'s Stats - Level: {self.level}, Health: {self.health}/{self.max_health}, Attack Power: {self.attack_power}, XP: {self.experience}/{self.exp_to_next_level}, Victories: {self.victories}")
 
     def use_special_ability(self, opponent):
         """Placeholder for special abilities in subclasses."""
@@ -139,7 +174,7 @@ class Warrior(Character):
 
     def display_stats(self):
         shield_status = " [🛡️SHIELD ACTIVE] " if self.shield_active else ""
-        print(f"{self.name}'s Stats - Health: {self.health}/{self.max_health}, Attack Power: {self.attack_power}, Rage Stacks: {self.rage_stacks}, Potions: {self.healing_potions} {shield_status}")
+        print(f"{self.name}'s Stats - Level: {self.level}, Health: {self.health}/{self.max_health}, Attack Power: {self.attack_power}, Rage Stacks: {self.rage_stacks}, Potions: {self.healing_potions} {shield_status}")
 
 # Mage class
 class Mage(Character):
@@ -237,7 +272,7 @@ class Mage(Character):
             self.mana = min(self.mana + self.mana_regen, self.max_mana)
 
     def display_stats(self):
-        print(f"{self.name}'s Stats - Health: {self.health}/{self.max_health}, Attack Power: {self.attack_power}, Mana: {self.mana}/{self.max_mana}, Potions: {self.healing_potions}")
+        print(f"{self.name}'s Stats - Level: {self.level}, Health: {self.health}/{self.max_health}, Attack Power: {self.attack_power}, Mana: {self.mana}/{self.max_mana}, Potions: {self.healing_potions}")
 
 # Archer class
 class Archer(Character):
@@ -344,7 +379,7 @@ class Archer(Character):
             self.focus = min(self.focus + self.focus_regen, self.max_focus)
 
     def display_stats(self):
-        print(f"{self.name}'s Stats - Health: {self.health}/{self.max_health}, Attack Power: {self.attack_power}, Focus: {self.focus}/{self.max_focus}, Potions: {self.healing_potions}")
+        print(f"{self.name}'s Stats - Level: {self.level}, Health: {self.health}/{self.max_health}, Attack Power: {self.attack_power}, Focus: {self.focus}/{self.max_focus}, Potions: {self.healing_potions}")
 
 # Paladin class
 class Paladin(Character):
@@ -453,14 +488,22 @@ class Paladin(Character):
 
     def display_stats(self):
         invuln_status = " [🛡️DIVINE SHIELD ACTIVE] " if hasattr(self, 'is_invulnerable') and self.is_invulnerable else ""
-        print(f"{self.name}'s Stats - Health: {self.health}/{self.max_health}, Attack Power: {self.attack_power}, Holy Power: {self.holy_power}/{self.max_holy_power}, Potions: {self.healing_potions} {invuln_status}")
+        print(f"{self.name}'s Stats - Level: {self.level}, Health: {self.health}/{self.max_health}, Attack Power: {self.attack_power}, Holy Power: {self.holy_power}/{self.max_holy_power}, Potions: {self.healing_potions} {invuln_status}")
 
 # EvilWizard class
 class EvilWizard(Character):
-    def __init__(self, name):
-        super().__init__(name, health=150, attack_power=15)
+    def __init__(self, name, difficulty=1.0):
+        base_health = int(150 * difficulty)
+        base_attack = int(15 * difficulty)
+        super().__init__(name, health=base_health, attack_power=base_attack)
         self.is_stunned = False
         self.turn_counter = 0 # Track turns for special ability
+        self.difficulty = difficulty
+        self.boss_type = "wizard"
+
+    def get_exp_reward(self):
+        """Return experience points for defeating this boss"""
+        return int(100 * self.difficulty)
 
     def regenerate(self):
         # Check if stunned first
@@ -496,8 +539,8 @@ class EvilWizard(Character):
 
     def dark_bolt(self, opponent):
         """Special Ability - powerful dark magic attack used every 4 turns"""
-        special_damage = 35
-        spec_dam_max = 60
+        special_damage = int(35 * self.difficulty)
+        spec_dam_max = int(60 * self.difficulty)
         damage = random.randint(special_damage, spec_dam_max)
         opponent.health -= damage
         print(f"🌑💥{self.name} unleashes DARK BOLT!")
@@ -506,6 +549,190 @@ class EvilWizard(Character):
 
         if opponent.health <= 0:
             print(f"{opponent.name} has been defeated!")
+
+# NEW BOSS CLASSES
+
+class FireDragon(Character):
+    """Fire Dragon - High damage fire-based attacks with burning effects"""
+    def __init__(self, name, difficulty=1.0):
+        base_health = int(180 * difficulty)
+        base_attack = int(20 * difficulty)
+        super().__init__(name, health=base_health, attack_power=base_attack)
+        self.is_stunned = False
+        self.turn_counter = 0
+        self.difficulty = difficulty
+        self.boss_type = "dragon"
+
+    def regenerate(self):
+        if self.is_stunned:
+            print(f"💫{self.name} is stunned and cannot act!")
+            return
+        # Dragons don't regenerate, but get stronger
+        print(f"🔥{self.name}'s flames burn brighter!")
+
+    def attack(self, opponent):
+        if self.is_stunned:
+            print(f"💫{self.name} is stunned and cannot attack!")
+            self.is_stunned = False
+            return
+
+        self.turn_counter += 1
+
+        # Use burning breath every 3 turns
+        if self.turn_counter % 3 == 0:
+            self.burning_breath(opponent)
+        else:
+            min_dam = int(self.attack_power * 0.6)
+            max_dam = int(self.attack_power * 1.6)
+            damage = random.randint(min_dam, max_dam)
+            opponent.health -= damage
+            print(f"🔥{self.name} breathes fire for {damage} damage!")
+
+    def burning_breath(self, opponent):
+        """Powerful AOE fire attack"""
+        damage = random.randint(int(40 * self.difficulty), int(70 * self.difficulty))
+        opponent.health -= damage
+        print(f"🔥🌪️{self.name} unleashes BURNING BREATH!")
+        print(f"Scorching flames deal {damage} damage!")
+
+    def get_exp_reward(self):
+        return int(150 * self.difficulty)
+
+class IceTitan(Character):
+    """Ice Titan - Defensive tank with freezing attacks and ice armor"""
+    def __init__(self, name, difficulty=1.0):
+        base_health = int(200 * difficulty)
+        base_attack = int(12 * difficulty)
+        super().__init__(name, health=base_health, attack_power=base_attack)
+        self.is_stunned = False
+        self.turn_counter = 0
+        self.difficulty = difficulty
+        self.boss_type = "titan"
+        self.ice_armor = False
+
+    def regenerate(self):
+        if self.is_stunned:
+            print(f"💫{self.name} is stunned!")
+            return
+
+        heal = int(8 * self.difficulty)
+        self.health = min(self.health + heal, self.max_health)
+        print(f"❄️{self.name} regenerates {heal} health through icy magic!")
+
+    def attack(self, opponent):
+        if self.is_stunned:
+            print(f"💫{self.name} is stunned and cannot attack!")
+            self.is_stunned = False
+            return
+
+        self.turn_counter += 1
+
+        # Activate ice armor every 4 turns
+        if self.turn_counter % 4 == 0:
+            self.ice_armor = True
+            print(f"🧊✨{self.name} summons ICE ARMOR! Next attack will be weakened!")
+
+        # Use frozen spike every 3 turns
+        if self.turn_counter % 3 == 0:
+            self.frozen_spike(opponent)
+        else:
+            min_dam = int(self.attack_power * 0.5)
+            max_dam = int(self.attack_power * 1.5)
+            damage = random.randint(min_dam, max_dam)
+            opponent.health -= damage
+            print(f"❄️{self.name} slams with icy fists for {damage} damage!")
+
+    def frozen_spike(self, opponent):
+        """Piercing ice attack"""
+        damage = random.randint(int(30 * self.difficulty), int(50 * self.difficulty))
+        opponent.health -= damage
+        print(f"❄️🔹{self.name} launches FROZEN SPIKE for {damage} damage!")
+
+    def take_damage(self, damage):
+        """Ice Titan has ice armor that reduces damage"""
+        if self.ice_armor:
+            damage = int(damage * 0.6)
+            self.ice_armor = False
+            print(f"🧊 Ice Armor shatters! Damage reduced to {damage}!")
+        self.health -= damage
+        return damage
+
+    def get_exp_reward(self):
+        return int(120 * self.difficulty)
+
+class ShadowAssassin(Character):
+    """Shadow Assassin - Fast, evasive with critical strikes"""
+    def __init__(self, name, difficulty=1.0):
+        base_health = int(120 * difficulty)
+        base_attack = int(18 * difficulty)
+        super().__init__(name, health=base_health, attack_power=base_attack)
+        self.is_stunned = False
+        self.turn_counter = 0
+        self.difficulty = difficulty
+        self.boss_type = "assassin"
+        self.evasion_active = False
+
+    def regenerate(self):
+        if self.is_stunned:
+            print(f"💫{self.name} is stunned!")
+            return
+
+        heal = int(3 * self.difficulty)
+        self.health = min(self.health + heal, self.max_health)
+
+        # 40% chance to activate evasion
+        if random.random() < 0.4:
+            self.evasion_active = True
+            print(f"🌑{self.name} melts into shadows! Next attack may miss!")
+        else:
+            print(f"🌑{self.name} regenerates {heal} health!")
+
+    def attack(self, opponent):
+        if self.is_stunned:
+            print(f"💫{self.name} is stunned and cannot attack!")
+            self.is_stunned = False
+            return
+
+        self.turn_counter += 1
+
+        # Use shadow strike every 3 turns
+        if self.turn_counter % 3 == 0:
+            self.shadow_strike(opponent)
+        else:
+            min_dam = int(self.attack_power * 0.5)
+            max_dam = int(self.attack_power * 1.5)
+            damage = random.randint(min_dam, max_dam)
+
+            # 30% crit chance
+            if random.random() < 0.3:
+                damage = int(damage * 2)
+                opponent.health -= damage
+                print(f"🗡️💥CRITICAL HIT! {damage} damage!")
+            else:
+                opponent.health -= damage
+                print(f"🗡️{self.name} attacks for {damage} damage!")
+
+    def shadow_strike(self, opponent):
+        """Guaranteed critical strike"""
+        damage = random.randint(int(40 * self.difficulty), int(65 * self.difficulty))
+        opponent.health -= damage
+        print(f"🌑⚡{self.name} uses SHADOW STRIKE for {damage} damage!")
+
+    def take_damage(self, damage):
+        """Shadow Assassin can evade attacks"""
+        if self.evasion_active:
+            if random.random() < 0.5:  # 50% dodge chance
+                self.evasion_active = False
+                print(f"🌑💨{self.name} evades the attack completely!")
+                return 0
+            else:
+                self.evasion_active = False
+
+        self.health -= damage
+        return damage
+
+    def get_exp_reward(self):
+        return int(130 * self.difficulty)
 
 def create_character():
     print("Choose your character class:")

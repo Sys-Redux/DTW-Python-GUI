@@ -1,23 +1,25 @@
 import pygame
 import os
-from DTW import Warrior, Mage, Archer, Paladin, EvilWizard
+from DTW import Warrior, Mage, Archer, Paladin, EvilWizard, FireDragon, IceTitan, ShadowAssassin
 
 class VisualBattleGame:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((800, 600))
-        pygame.display.set_caption("Battle the Evil Wizard!")
+        pygame.display.set_caption("Battle the Bosses!")
         self.clock = pygame.time.Clock()
 
         # Game logic - will be set after character creation
         self.player = None
-        self.wizard = EvilWizard("Evil Wizard")
+        self.wizard = None  # Will be set after boss selection
+        self.selected_boss_type = None
+        self.selected_difficulty = 1.0
 
         # Load sprite assets (if available)
         self.load_assets()
 
         # Game state
-        self.game_state = "character_creation"  # "character_creation", "player_turn", "enemy_turn", "game_over", "victory", "special_menu"
+        self.game_state = "character_creation"  # "character_creation", "boss_selection", "difficulty_selection", "player_turn", "enemy_turn", "game_over", "victory", "special_menu"
         self.messages = []
         self.message_timer = 0
         self.waiting_for_next_turn = False
@@ -1011,23 +1013,51 @@ class VisualBattleGame:
         self.screen.blit(restart_text, restart_rect)
 
     def draw_victory_screen(self):
-        """Draw victory screen"""
+        """Draw enhanced victory screen with XP and level info"""
         overlay = pygame.Surface((800, 600))
         overlay.set_alpha(200)
         overlay.fill((0, 0, 0))
         self.screen.blit(overlay, (0, 0))
 
-        # Victory text
-        victory_text = self.font.render("VICTORY!", True, (255, 215, 0))
-        victory_rect = victory_text.get_rect(center=(400, 250))
+        # Victory text with glow effect
+        victory_text = self.title_font.render("VICTORY!", True, (255, 215, 0))
+        victory_rect = victory_text.get_rect(center=(400, 100))
         self.screen.blit(victory_text, victory_rect)
 
-        win_text = self.small_font.render("You defeated the Evil Wizard!", True, (255, 255, 255))
-        win_rect = win_text.get_rect(center=(400, 300))
-        self.screen.blit(win_text, win_rect)
+        # Boss defeated
+        boss_text = self.font.render(f"You defeated {self.wizard.name}!", True, (255, 255, 255))
+        boss_rect = boss_text.get_rect(center=(400, 170))
+        self.screen.blit(boss_text, boss_rect)
 
-        close_text = self.small_font.render("Close window to exit", True, (150, 150, 150))
-        close_rect = close_text.get_rect(center=(400, 350))
+        # XP gained
+        if hasattr(self.wizard, 'get_exp_reward'):
+            exp_gained = self.wizard.get_exp_reward()
+            exp_text = self.font.render(f"✨ Experience Gained: {exp_gained} XP", True, (100, 255, 100))
+            exp_rect = exp_text.get_rect(center=(400, 230))
+            self.screen.blit(exp_text, exp_rect)
+
+        # Player stats
+        y_offset = 280
+        stats = [
+            f"Level: {self.player.level}",
+            f"Total XP: {self.player.experience}",
+            f"Next Level: {self.player.exp_to_next_level - self.player.experience} XP needed",
+            f"Victories: {self.player.victories}",
+        ]
+
+        for stat in stats:
+            stat_surf = self.small_font.render(stat, True, (200, 200, 255))
+            stat_rect = stat_surf.get_rect(center=(400, y_offset))
+            self.screen.blit(stat_surf, stat_rect)
+            y_offset += 30
+
+        # Continue option
+        continue_text = self.font.render("Press SPACE to continue", True, (255, 215, 0))
+        continue_rect = continue_text.get_rect(center=(400, 500))
+        self.screen.blit(continue_text, continue_rect)
+
+        close_text = self.small_font.render("or close window to exit", True, (150, 150, 150))
+        close_rect = close_text.get_rect(center=(400, 540))
         self.screen.blit(close_text, close_rect)
 
     def draw_battle_scene(self, mouse_pos):
@@ -1217,6 +1247,11 @@ class VisualBattleGame:
         self.shake_screen(8)
 
         if self.wizard.health <= 0:
+            # Award XP for defeating the boss
+            exp_reward = self.wizard.get_exp_reward()
+            self.player.gain_experience(exp_reward)
+            self.player.victories += 1
+
             self.game_state = "victory"
             self.add_message("Victory! Wizard defeated!")
         else:
@@ -1294,6 +1329,11 @@ class VisualBattleGame:
                 self.shake_screen(15)
 
                 if self.wizard.health <= 0:
+                    # Award XP for defeating the boss
+                    exp_reward = self.wizard.get_exp_reward()
+                    self.player.gain_experience(exp_reward)
+                    self.player.victories += 1
+
                     self.game_state = "victory"
                     self.add_message("Victory! Wizard defeated!")
                 else:
@@ -1326,6 +1366,11 @@ class VisualBattleGame:
                 self.shake_screen(12)
 
                 if self.wizard.health <= 0:
+                    # Award XP for defeating the boss
+                    exp_reward = self.wizard.get_exp_reward()
+                    self.player.gain_experience(exp_reward)
+                    self.player.victories += 1
+
                     self.game_state = "victory"
                     self.add_message("Victory! Wizard defeated!")
                 else:
@@ -1359,6 +1404,11 @@ class VisualBattleGame:
                 self.shake_screen(10)
 
                 if self.wizard.health <= 0:
+                    # Award XP for defeating the boss
+                    exp_reward = self.wizard.get_exp_reward()
+                    self.player.gain_experience(exp_reward)
+                    self.player.victories += 1
+
                     self.game_state = "victory"
                     self.add_message("Victory! Wizard defeated!")
                 else:
@@ -1379,6 +1429,11 @@ class VisualBattleGame:
                 self.shake_screen(8)
 
                 if self.wizard.health <= 0:
+                    # Award XP for defeating the boss
+                    exp_reward = self.wizard.get_exp_reward()
+                    self.player.gain_experience(exp_reward)
+                    self.player.victories += 1
+
                     self.game_state = "victory"
                     self.add_message("Victory! Wizard defeated!")
                 else:
@@ -1653,9 +1708,110 @@ class VisualBattleGame:
         elif self.selected_class == 'paladin':
             self.player = Paladin(name)
 
-        self.game_state = "player_turn"
-        self.add_message("Battle started!")
-        self.add_message("Choose your action!")
+        self.game_state = "boss_selection"  # Go to boss selection instead of battle
+        self.add_message("Choose your opponent!")
+
+    def draw_boss_selection(self, mouse_pos):
+        """Draw boss selection screen"""
+        self.screen.fill((20, 20, 40))
+
+        # Title
+        title = self.title_font.render("Choose Your Opponent", True, (255, 69, 0))
+        title_rect = title.get_rect(center=(400, 40))
+        self.screen.blit(title, title_rect)
+
+        # Boss cards - 2x2 grid
+        bosses = [
+            ('wizard', 'Evil Wizard\nMalakar', 150, 180, (138, 43, 226), "Dark magic user"),
+            ('dragon', 'Fire Dragon\nInfernius', 550, 180, (255, 69, 0), "Burning breath attacks"),
+            ('titan', 'Ice Titan\nFrostbane', 150, 380, (0, 191, 255), "Defensive ice fortress"),
+            ('assassin', 'Shadow Assassin\nNyx', 550, 380, (64, 64, 64), "Fast critical strikes")
+        ]
+
+        for boss_id, boss_name, x, y, color, desc in bosses:
+            rect = pygame.Rect(x, y, 200, 160)
+
+            is_hover = rect.collidepoint(mouse_pos)
+
+            # Draw card
+            pygame.draw.rect(self.screen, (0, 0, 0), rect, border_radius=10)
+            border_color = tuple(min(c + 50, 255) for c in color) if is_hover else color
+            pygame.draw.rect(self.screen, border_color, rect, 3, border_radius=10)
+
+            # Boss name
+            lines = boss_name.split('\n')
+            y_offset = y + 20
+            for line in lines:
+                name_surf = self.small_font.render(line, True, (255, 255, 255))
+                name_rect = name_surf.get_rect(center=(x + 100, y_offset))
+                self.screen.blit(name_surf, name_rect)
+                y_offset += 25
+
+            # Description
+            desc_surf = self.small_font.render(desc, True, (200, 200, 200))
+            desc_rect = desc_surf.get_rect(center=(x + 100, y + 110))
+            self.screen.blit(desc_surf, desc_rect)
+
+            # Store rect for click detection
+            if not hasattr(self, 'boss_buttons'):
+                self.boss_buttons = {}
+            self.boss_buttons[boss_id] = rect
+
+        # Instructions
+        inst = self.font.render("Click to select your opponent", True, (255, 255, 255))
+        self.screen.blit(inst, (180, 560))
+
+    def draw_difficulty_selection(self, mouse_pos):
+        """Draw difficulty selection screen"""
+        self.screen.fill((20, 20, 40))
+
+        # Title
+        title = self.title_font.render("Choose Difficulty", True, (255, 215, 0))
+        title_rect = title.get_rect(center=(400, 60))
+        self.screen.blit(title, title_rect)
+
+        # Difficulty cards
+        difficulties = [
+            ('easy', 'Easy', 0.8, 100, 200, (100, 255, 100), "80% stats"),
+            ('normal', 'Normal', 1.0, 250, 200, (100, 100, 255), "100% stats"),
+            ('hard', 'Hard', 1.3, 400, 200, (255, 140, 0), "130% stats"),
+            ('nightmare', 'Nightmare', 1.7, 550, 200, (255, 50, 50), "170% stats")
+        ]
+
+        for diff_id, diff_name, multiplier, x, y, color, desc in difficulties:
+            rect = pygame.Rect(x, 200, 140, 200)
+
+            is_hover = rect.collidepoint(mouse_pos)
+
+            # Draw card
+            pygame.draw.rect(self.screen, (0, 0, 0), rect, border_radius=10)
+            border_color = tuple(min(c + 50, 255) for c in color) if is_hover else color
+            pygame.draw.rect(self.screen, border_color, rect, 3, border_radius=10)
+
+            # Difficulty name
+            name_surf = self.font.render(diff_name, True, (255, 255, 255))
+            name_rect = name_surf.get_rect(center=(x + 70, y + 240))
+            self.screen.blit(name_surf, name_rect)
+
+            # Stats
+            stat_surf = self.small_font.render(desc, True, (200, 200, 200))
+            stat_rect = stat_surf.get_rect(center=(x + 70, y + 270))
+            self.screen.blit(stat_surf, stat_rect)
+
+            # Reward multiplier
+            reward = f"XP x{multiplier}"
+            reward_surf = self.small_font.render(reward, True, (255, 215, 0))
+            reward_rect = reward_surf.get_rect(center=(x + 70, y + 300))
+            self.screen.blit(reward_surf, reward_rect)
+
+            # Store rect
+            if not hasattr(self, 'difficulty_buttons'):
+                self.difficulty_buttons = {}
+            self.difficulty_buttons[diff_id] = (rect, multiplier)
+
+        # Instructions
+        inst = self.font.render("Click to select difficulty", True, (255, 255, 255))
+        self.screen.blit(inst, (220, 480))
 
     def run(self):
         running = True
@@ -1664,12 +1820,16 @@ class VisualBattleGame:
             mouse_pos = pygame.mouse.get_pos()
 
             # Update game state
-            if self.game_state != "character_creation":
+            if self.game_state not in ["character_creation", "boss_selection", "difficulty_selection"]:
                 self.update()
 
             # Draw based on game state
             if self.game_state == "character_creation":
                 self.draw_character_creation(mouse_pos)
+            elif self.game_state == "boss_selection":
+                self.draw_boss_selection(mouse_pos)
+            elif self.game_state == "difficulty_selection":
+                self.draw_difficulty_selection(mouse_pos)
             else:
                 self.draw_battle_scene(mouse_pos)
 
@@ -1705,6 +1865,34 @@ class VisualBattleGame:
                         elif len(self.player_name) < 15:  # Max name length
                             if event.unicode.isprintable():
                                 self.player_name += event.unicode
+
+                # Boss selection events
+                elif self.game_state == "boss_selection" and event.type == pygame.MOUSEBUTTONDOWN:
+                    if hasattr(self, 'boss_buttons'):
+                        for boss_id, button_rect in self.boss_buttons.items():
+                            if button_rect.collidepoint(event.pos):
+                                self.selected_boss_type = boss_id
+                                self.game_state = "difficulty_selection"
+
+                # Difficulty selection events
+                elif self.game_state == "difficulty_selection" and event.type == pygame.MOUSEBUTTONDOWN:
+                    if hasattr(self, 'difficulty_buttons'):
+                        for diff_id, (button_rect, multiplier) in self.difficulty_buttons.items():
+                            if button_rect.collidepoint(event.pos):
+                                self.selected_difficulty = multiplier
+                                # Create the boss based on selection
+                                if self.selected_boss_type == 'wizard':
+                                    self.wizard = EvilWizard("Malakar the Malevolent", self.selected_difficulty)
+                                elif self.selected_boss_type == 'dragon':
+                                    self.wizard = FireDragon("Infernius the Scorcher", self.selected_difficulty)
+                                elif self.selected_boss_type == 'titan':
+                                    self.wizard = IceTitan("Frostbane the Frozen", self.selected_difficulty)
+                                elif self.selected_boss_type == 'assassin':
+                                    self.wizard = ShadowAssassin("Nyx the Silent", self.selected_difficulty)
+                                # Start the battle
+                                self.game_state = "player_turn"
+                                self.add_message("Battle started!")
+                                self.add_message("Choose your action!")
 
                 # Battle events
                 elif event.type == pygame.MOUSEBUTTONDOWN and self.game_state == "player_turn":
