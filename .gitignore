@@ -1,0 +1,93 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyc
+*.pyo
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Pygame
+*.log
+
+# Backup files
+*_backup.py
+*.bak
+*.orig
+*.backup
+
+# OS files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Game saves (if you implement save/load)
+saves/
+*.sav
+*.save
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation builds
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# Large asset files (optional - uncomment if assets are too large for git)
+# assets/Tiny Swords (Free Pack)/
+# assets/Free - Raven Fantasy Icons/
+# *.png
+# *.jpg
+# *.wav
+# *.mp3
+# *.ogg
+
+# Performance profiling
+*.prof
+*.lprof
+
+# Jupyter Notebooks (if used)
+.ipynb_checkpoints/
+*.ipynb
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
